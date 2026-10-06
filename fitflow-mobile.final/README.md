@@ -17,6 +17,8 @@ Disciplina **Mobile Application Development** — 2TDS — Prof. Fernando Pinéo
 
 O FitFlow é a evolução do projeto anterior do grupo (VetFlow). Mantivemos a mesma arquitetura em camadas e os mesmos padrões de código — `contexts` → `hooks` (TanStack Query) → `services` — e trocamos a fonte de dados: a API HTTP deu lugar ao **Firebase Authentication** e ao **Cloud Firestore**.
 
+## Link do vídeo demonstrativo: "https://youtu.be/5oWpEz3akQA"
+
 Principais funcionalidades:
 
 - **Autenticação (Firebase Auth):** cadastro, login, logout, "esqueci minha senha" (e-mail de redefinição) e exclusão da conta (com reautenticação por senha).
