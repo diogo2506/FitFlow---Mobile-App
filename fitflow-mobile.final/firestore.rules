@@ -1,0 +1,56 @@
+rules_version = '2';
+
+// Regras de segurança do Cloud Firestore — FitFlow
+//
+// Estrutura:
+//   usuarios/{uid}                     → perfil (nome, email, telefone, criadoEm)
+//   usuarios/{uid}/treinos/{treinoId}  → treinos do usuário
+//
+// Regra de ouro: só o próprio usuário autenticado (request.auth.uid == uid)
+// pode ler ou escrever no seu documento e na sua subcoleção de treinos.
+// Qualquer outro caminho do banco é bloqueado.
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function estaLogado() {
+      return request.auth != null;
+    }
+
+    function ehDono(uid) {
+      return estaLogado() && request.auth.uid == uid;
+    }
+
+    // Garante que um treino tem os campos obrigatórios com os tipos certos
+    // e que nunca é gravado com dados de outro usuário.
+    function treinoValido(uid) {
+      let d = request.resource.data;
+      return d.nome is string && d.nome.size() > 0 && d.nome.size() <= 60
+        && d.exercicios is string && d.exercicios.size() > 0 && d.exercicios.size() <= 500
+        && d.duracaoMin is number && d.duracaoMin > 0
+        && d.grupoMuscular is string
+        && d.diaSemana in ['SEG', 'TER', 'QUA', 'QUI', 'SEX', 'SAB', 'DOM']
+        && d.intensidade in ['LEVE', 'MODERADA', 'INTENSA']
+        && d.concluido is bool
+        && d.usuarioId == uid;
+    }
+
+    match /usuarios/{uid} {
+      allow read, delete: if ehDono(uid);
+      // O perfil nunca pode conter senha.
+      allow create, update: if ehDono(uid)
+        && !('senha' in request.resource.data)
+        && !('password' in request.resource.data);
+
+      match /treinos/{treinoId} {
+        allow read, delete: if ehDono(uid);
+        allow create, update: if ehDono(uid) && treinoValido(uid);
+      }
+    }
+
+    // Bloqueia todo o resto.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
